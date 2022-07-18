@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from ..models import Group, Post, Comment
 
@@ -61,7 +62,7 @@ class PostCreateFormTests(TestCase):
         ))
         self.assertEqual(Post.objects.count(), posts_count)
 
-def test_create_post(self):
+    def test_create_post(self):
         """Валидная форма создает запись в Post."""
         small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
@@ -81,7 +82,7 @@ def test_create_post(self):
             'group': self.group.pk,
             'image': uploaded,
         }
-        response = self.authorized_client.post(
+        response = self.authorized_author.post(
             reverse('posts:post_create'),
             data=form_data,
             follow=True
@@ -89,7 +90,7 @@ def test_create_post(self):
         self.assertRedirects(
             response,
             reverse('posts:profile',
-                    kwargs={'username': self.user.username}),
+                    kwargs={'username': self.author.username}),
         )
         self.assertEqual(Post.objects.count(), post_count + 1)
         self.assertTrue(
@@ -100,14 +101,14 @@ def test_create_post(self):
             ).exists())
 
 
-def test_post_detail_create_comment_post(self):
+    def test_post_detail_create_comment_post(self):
         """При отправке комментария на post_detail отображается
         этот комментарий."""
         comments = Comment.objects.count()
         form_data = {
             'text': 'Комментарий',
         }
-        response = self.authorized_client.post(
+        response = self.authorized_author.post(
             reverse('posts:add_comment', args=('1')),
             data=form_data,
             follow=True
@@ -116,7 +117,7 @@ def test_post_detail_create_comment_post(self):
             response, reverse('posts:post_detail', kwargs={'post_id': '1'})
         )
         self.assertEqual(Comment.objects.count(), comments + 1)
-        response2 = self.author_client.get(
+        response2 = self.authorized_author.get(
             reverse('posts:post_detail', kwargs={'post_id': '1'})
         )
         self.assertContains(response2, 'Комментарий')
