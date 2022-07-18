@@ -100,7 +100,6 @@ class PostCreateFormTests(TestCase):
                 image='posts/small.gif'
             ).exists())
 
-
     def test_post_detail_create_comment_post(self):
         """При отправке комментария на post_detail отображается
         этот комментарий."""

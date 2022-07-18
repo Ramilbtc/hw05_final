@@ -12,4 +12,3 @@ class ViewTestClass(TestCase):
     def test_error_template(self):
         response = self.client.get('/nonexist-page/')
         self.assertTemplateUsed(response, 'core/404.html')
-

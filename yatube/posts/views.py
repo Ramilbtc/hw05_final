@@ -130,9 +130,9 @@ def follow_index(request):
     }
     return render(request, 'posts/follow.html', context)
 
+
 @login_required
 def profile_follow(request, username):
-    user = request.user
     author = get_object_or_404(User, username=username)
     if author != request.user:
         Follow.objects.get_or_create(
@@ -141,10 +141,10 @@ def profile_follow(request, username):
         )
     return render(request, 'posts/follow.html')
 
+
 @login_required
 def profile_unfollow(request, username):
     user = request.user
     author = get_object_or_404(User, username=username)
     Follow.objects.filter(user=user, author=author).delete()
     return render(request, 'posts/follow.html')
-
