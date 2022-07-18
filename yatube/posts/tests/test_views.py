@@ -98,7 +98,9 @@ class PostViewTests(TestCase):
             response.context.get('group').title, 'Тестовая группа'
         )
         self.assertEqual(response.context.get('group').slug, 'test-slug')
-        self.assertEqual((response.context['page_obj'][0]).image, 'posts/small.gif')
+        self.assertEqual(
+            (response.context['page_obj'][0]).image, 'posts/small.gif'
+        )
 
     def test_profile_page_show_correct_context(self):
         """Шаблон profile сформирован с правильным контекстом."""
@@ -107,8 +109,9 @@ class PostViewTests(TestCase):
         )
         self.assertIn('author', response.context)
         self.assertEqual(response.context.get('author').username, 'auth')
-        self.assertEqual((response.context['page_obj'][0]).image, 'posts/small.gif')
-
+        self.assertEqual(
+            (response.context['page_obj'][0]).image, 'posts/small.gif'
+        )
 
     def test_post_detail_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
@@ -202,6 +205,7 @@ class PostViewTests(TestCase):
         self.assertNotEqual(second_object.text, first_object.text)
         self.assertNotContains(response_new, first_object.text)
 
+
 class PaginatorViewsTest(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -256,4 +260,3 @@ class PaginatorViewsTest(TestCase):
             with self.subTest(expected=expected):
                 response = self.client.get(expected)
                 self.assertEqual(len(response.context['page_obj']), 3)
-
