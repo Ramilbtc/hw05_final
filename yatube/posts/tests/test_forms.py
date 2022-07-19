@@ -50,7 +50,7 @@ class PostCreateFormTests(TestCase):
         """Валидная форма post_edit редактирует запись."""
         example = Post.objects.create(
             author=self.user,
-            text='Some author\s text',
+            text='Some author text',
         )
         posts_count = Post.objects.count()
         form_data = {
@@ -83,7 +83,7 @@ class CreationFormTest(TestCase):
             'email': 'smthng@mail.ru',
             'password1': '@Kuku111',
             'password2': '@Kuku111',
-            }
+        }
 
     def setUp(self):
         self.guest_client = Client()
