@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
 
-from ..models import Group, Post, Comment
+from ..models import Group, Post
+from ..forms import PostForm
+
 
 User = get_user_model()
 
@@ -12,111 +13,89 @@ class PostCreateFormTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.author = User.objects.create_user(username='author')
+        cls.user = User.objects.create_user(username='author')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
             description='Тестовый текст',
         )
-        cls.post = Post.objects.create(
-            author=cls.author,
-            group=cls.group,
-            text='Тестовый пост',
-        )
-        cls.authorized_author = Client()
-        cls.authorized_author.force_login(cls.author)
+
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(PostCreateFormTests.user)
 
     def test_create_post_form(self):
         """Валидная форма create_post создает запись."""
         posts_count = Post.objects.count()
         form_data = {
             'text': 'Тестовый пост1',
-            'group': self.group.id
+            'group': PostCreateFormTests.group.pk
         }
-        response = self.authorized_author.post(
+        response = self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
             follow=True,
         )
         self.assertRedirects(response, reverse(
             'posts:profile',
-            kwargs={'username': self.author}
+            kwargs={'username': f'{ self.user.username }'}
         ))
-        self.assertEqual(Post.objects.count(), posts_count + 1)
+        new_post_count = Post.objects.count()
+        last_post = Post.objects.last()
+        self.assertNotEqual(posts_count, new_post_count)
+        self.assertEqual(last_post.text, form_data['text'])
+        self.assertEqual(last_post.group.pk, form_data['group'])
 
     def test_post_edit_form(self):
         """Валидная форма post_edit редактирует запись."""
+        example = Post.objects.create(
+            author=self.user,
+            text='Some author\s text',
+        )
         posts_count = Post.objects.count()
         form_data = {
-            'text': 'Тестовый edit пост',
-            'group': self.group.id
+            'text': 'Текст 123',
         }
-        response = self.authorized_author.post(
-            reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
+        response = self.authorized_client.post(
+            reverse('posts:post_edit', kwargs={'post_id': f'{ example.pk }'}),
             data=form_data,
             follow=True,
         )
         self.assertRedirects(response, reverse(
             'posts:post_detail',
-            kwargs={'post_id': self.post.id}
+            kwargs={'post_id': f'{ example.pk }'}
         ))
-        self.assertEqual(Post.objects.count(), posts_count)
+        after_edit_count = Post.objects.count()
 
-    def test_create_post(self):
-        """Валидная форма создает запись в Post."""
-        small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
-        uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=small_gif,
-            content_type='image/gif')
-        post_count = Post.objects.count()
-        form_data = {
-            'text': 'Тестовый текст',
-            'group': self.group.pk,
-            'image': uploaded,
-        }
-        response = self.authorized_author.post(
-            reverse('posts:post_create'),
-            data=form_data,
+        self.assertEqual(posts_count, after_edit_count)
+        self.assertNotEqual(f'{ example.text }', form_data['text'])
+
+
+class CreationFormTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.form = PostForm()
+        cls.form_data = {
+            'first_name': 'Mark',
+            'last_name': 'Brodskiy',
+            'username': 'markmark',
+            'email': 'smthng@mail.ru',
+            'password1': '@Kuku111',
+            'password2': '@Kuku111',
+            }
+
+    def setUp(self):
+        self.guest_client = Client()
+
+    def test_new_user(self):
+        """Валидная форма создает запись в БД."""
+        users_count = User.objects.count()
+        response = self.guest_client.post(
+            reverse('users:signup'),
+            data=self.form_data,
             follow=True
         )
-        self.assertRedirects(
-            response,
-            reverse('posts:profile',
-                    kwargs={'username': self.author.username}),
-        )
-        self.assertEqual(Post.objects.count(), post_count + 1)
-        self.assertTrue(
-            Post.objects.filter(
-                group=self.group.pk,
-                text='Тестовый текст',
-                image='posts/small.gif'
-            ).exists())
-
-    def test_post_detail_create_comment_post(self):
-        """При отправке комментария на post_detail отображается
-        этот комментарий."""
-        comments = Comment.objects.count()
-        form_data = {
-            'text': 'Комментарий',
-        }
-        response = self.authorized_author.post(
-            reverse('posts:add_comment', args=('1')),
-            data=form_data,
-            follow=True
-        )
-        self.assertRedirects(
-            response, reverse('posts:post_detail', kwargs={'post_id': '1'})
-        )
-        self.assertEqual(Comment.objects.count(), comments + 1)
-        response2 = self.authorized_author.get(
-            reverse('posts:post_detail', kwargs={'post_id': '1'})
-        )
-        self.assertContains(response2, 'Комментарий')
+        self.assertRedirects(response, reverse('posts:index'))
+        new_users_count = User.objects.count()
+        self.assertNotEqual(users_count, new_users_count)
