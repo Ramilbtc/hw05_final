@@ -219,6 +219,7 @@ class PostViewTests(TestCase):
         self.assertNotEqual(second_object.text, first_object.text)
         self.assertNotContains(response_new, first_object.text)
 
+
 class PaginatorViewsTest(TestCase):
     @classmethod
     def setUpClass(cls):

@@ -6,7 +6,6 @@ from django.urls import reverse
 from ..models import User, Post, Follow
 
 
-
 class CommentTest(TestCase):
     @classmethod
     def setUpClass(cls):
