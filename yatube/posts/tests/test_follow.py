@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..models import  User, Post, Follow
+from ..models import Post, Follow
 
 
 User = get_user_model()
@@ -19,21 +19,17 @@ class CommentTest(TestCase):
             author=cls.following,
             text='Текст 1234',
         )
+
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.another_authorized_client = Client()
         self.authorized_client.force_login(self.user_one)
         self.another_authorized_client.force_login(self.user_two)
-    # def test_authorized_can_follow_unfollow(self):
+
     def test_follow(self):
         """ Авторизованный пользователь может подписываться на других
         пользователей и удалять их из подписок."""
-        # following = User.objects.create(username='following')
-        # response = self.guest_client.get('/follow/', follow=True)
-        # self.assertRedirects(
-        #     response, '/auth/login/?next=/create/'
-        # )
         response_follow = self.authorized_client.post(
             reverse(
                 'posts:profile_follow',
@@ -41,16 +37,10 @@ class CommentTest(TestCase):
         ),
         data=None,
         follow=True,
-        )
-        # self.assertRedirects(response, reverse(
-        #         'posts:profile_follow',
-        #         kwargs={'username': following}))
         self.assertIs(Follow.objects.filter(user=self.user_one, author=self.following).exists(), True)
         response_unfollow = self.authorized_client.post(
-            reverse(
-                'posts:profile_unfollow',
-                kwargs={'username': self.following }
-        ),
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.following }),
         data=None,
         follow=True,
         )

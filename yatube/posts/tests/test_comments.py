@@ -1,8 +1,11 @@
+from http import HTTPStatus
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-from http import HTTPStatus
-from ..models import Comment, User, Post
+
+from ..models import Comment, Post
+
 
 User = get_user_model()
 
@@ -22,10 +25,9 @@ class CommentTest(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-
     def test_post_detail_page_show_correct_comment(self):
         """При добавлении комментария от
-        неавторизованного пользователя он не будет добавлен в БД. 
+        неавторизованного пользователя он не будет добавлен в БД.
         При создании коммента в БД появляется +1 запись,
         а сам комментарий отображается на индивидуальной
         странице поста."""
@@ -40,23 +42,19 @@ class CommentTest(TestCase):
             'post': self.post,
             'text': 'Самый доброжелательный комментарий',
         }
-        response_one=self.guest_client.post(
-            reverse(
-            'posts:add_comment',
-            kwargs={'post_id': f'{self.post.pk}'}
-            ),
+        response_one = self.guest_client.post(
+            reverse('posts:add_comment',
+                    kwargs={'post_id': f'{self.post.pk}'}),
             data=form_data,
             follow=True
         )
-        guest_comments_count= Comment.objects.count()
+        guest_comments_count = Comment.objects.count()
         self.assertEqual(response_one.status_code, HTTPStatus.OK)
         self.assertEqual(comments_count, guest_comments_count)
 
         response_two = self.authorized_client.post(
-            reverse(
-            'posts:add_comment',
-            kwargs={'post_id': f'{self.post.pk}'}
-            ),
+            reverse('posts:add_comment',
+                    kwargs={'post_id': f'{self.post.pk}'}),
             data=form_data,
             follow=True
         )
