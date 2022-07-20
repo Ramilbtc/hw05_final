@@ -132,3 +132,8 @@ class StaticURLTests(TestCase):
         """Страница /unexisting_page/ доступна любому пользователю."""
         response = self.guest_client.get('/unexisting_page/')
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+
+    def test_template_unexisting_page_added_url_exists_at_location(self):
+        """Шаблон /unexisting_page/ доступна любому пользователю."""
+        response = self.guest_client.get('/unexisting_page/')
+        self.assertTemplateUsed(response, 'core/404.html')

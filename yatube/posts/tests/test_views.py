@@ -1,11 +1,12 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.core.cache import cache
 
-from posts.models import Group, Post
-from posts.forms import PostForm
+from ..models import Group, Post, Follow
+from ..forms import PostForm
 
 User = get_user_model()
 
@@ -24,11 +25,24 @@ class PostViewTests(TestCase):
             title='Пустая группа',
             slug='test_slug_empty_group'
         )
+        cls.small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        cls.uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=cls.small_gif,
+            content_type='image/gif',
+        )
         cls.post = Post.objects.create(
             author=PostViewTests.user,
             text='Тестовый пост',
             group=PostViewTests.group,
-            image='posts/small.gif',
+            image=cls.uploaded,
         )
 
         cls.posts_pages_reverse = [
@@ -83,7 +97,7 @@ class PostViewTests(TestCase):
             first_object.pub_date: self.post.pub_date,
             first_object.author.username: 'auth',
             first_object.group.title: 'Тестовая группа',
-            first_object.image: 'posts/small.gif'
+            first_object.image: self.post.image
         }
         for post_key, post_value in posts_attributes.items():
             with self.subTest(post_key=post_key):
@@ -99,7 +113,7 @@ class PostViewTests(TestCase):
         )
         self.assertEqual(response.context.get('group').slug, 'test-slug')
         self.assertEqual(
-            (response.context['page_obj'][0]).image, 'posts/small.gif'
+            (response.context['page_obj'][0]).image, self.post.image
         )
 
     def test_profile_page_show_correct_context(self):
@@ -110,7 +124,7 @@ class PostViewTests(TestCase):
         self.assertIn('author', response.context)
         self.assertEqual(response.context.get('author').username, 'auth')
         self.assertEqual(
-            (response.context['page_obj'][0]).image, 'posts/small.gif'
+            (response.context['page_obj'][0]).image, self.post.image
         )
 
     def test_post_detail_show_correct_context(self):
@@ -118,7 +132,7 @@ class PostViewTests(TestCase):
         response = self.authorized_client.get(
             reverse('posts:post_detail', kwargs={'post_id': '1'}))
         self.assertEqual(response.context.get('post').text, self.post.text)
-        self.assertEqual(response.context.get('post').image, 'posts/small.gif')
+        self.assertEqual(response.context.get('post').image, self.post.image)
 
     def test_group_list_show_correct_context(self):
         """Шаблон group сформирован с правильным контекстом."""
