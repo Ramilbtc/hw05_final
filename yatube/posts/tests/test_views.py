@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.core.cache import cache
 
-from ..models import Group, Post, Follow
+from ..models import Group, Post
 from ..forms import PostForm
 
 User = get_user_model()
@@ -218,7 +218,6 @@ class PostViewTests(TestCase):
         self.assertEqual(count_page_obj, 1)
         self.assertNotEqual(second_object.text, first_object.text)
         self.assertNotContains(response_new, first_object.text)
-
 
 class PaginatorViewsTest(TestCase):
     @classmethod

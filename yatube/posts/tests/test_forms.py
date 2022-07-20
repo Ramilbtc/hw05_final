@@ -9,7 +9,9 @@ from django.urls import reverse
 
 from ..models import Group, Post, User
 
+
 User = get_user_model()
+
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
