@@ -25,18 +25,10 @@ class CommentTest(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def test_post_detail_page_show_correct_comment(self):
+    def test_post_adding_an_unauthorized_guest_comment(self):
         """При добавлении комментария от
-        неавторизованного пользователя он не будет добавлен в БД.
-        При создании коммента в БД появляется +1 запись,
-        а сам комментарий отображается на индивидуальной
-        странице поста."""
+        неавторизованного пользователя он не будет добавлен в БД."""
         comments_count = Comment.objects.count()
-        # form_data = {
-        #     'author': self.user,
-        #     'post': self.post,
-        #     'text_comment': 'Самый доброжелательный комментарий',
-        # }
         form_data = {
             'author': self.user,
             'post': self.post,
@@ -52,6 +44,16 @@ class CommentTest(TestCase):
         self.assertEqual(response_one.status_code, HTTPStatus.OK)
         self.assertEqual(comments_count, guest_comments_count)
 
+    def test_post_adding_comment_by_an_authorized_user(self):
+        """При создании коммента авторизированным пользователем
+        в БД появляется +1 запись и комментарий отображается на индивидуальной
+        странице поста.."""
+        comments_count = Comment.objects.count()
+        form_data = {
+            'author': self.user,
+            'post': self.post,
+            'text': 'Самый доброжелательный комментарий',
+        }
         response_two = self.authorized_client.post(
             reverse('posts:add_comment',
                     kwargs={'post_id': f'{self.post.pk}'}),
@@ -63,7 +65,6 @@ class CommentTest(TestCase):
             kwargs={'post_id': f'{ self.post.pk }'}))
         new_comments_count = Comment.objects.count()
         self.assertNotEqual(comments_count, new_comments_count)
-
         last_comment = Comment.objects.last()
         response_three = self.authorized_client.get(reverse(
             'posts:post_detail',

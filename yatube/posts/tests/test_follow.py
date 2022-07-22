@@ -6,7 +6,7 @@ from django.urls import reverse
 from ..models import User, Post, Follow
 
 
-class CommentTest(TestCase):
+class FollowtTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -25,9 +25,9 @@ class CommentTest(TestCase):
         self.authorized_client.force_login(self.user_one)
         self.another_authorized_client.force_login(self.user_two)
 
-    def test_authorized_can_follow_unfollow(self):
+    def test_authorized_can_follow(self):
         """ Авторизованный пользователь может подписываться на других
-        пользователей и удалять их из подписок."""
+        пользователей."""
         response_follow = self.authorized_client.post(
             reverse(
                 'posts:profile_follow',
@@ -41,6 +41,9 @@ class CommentTest(TestCase):
             user=self.user_one,
             author=self.following).exists(), True)
 
+    def test_authorized_can_unfollow(self):
+        """ Авторизованный пользователь может
+        удалять пользователей из подписок."""
         response_unfollow = self.authorized_client.post(
             reverse(
                 'posts:profile_unfollow',
@@ -70,16 +73,19 @@ class CommentTest(TestCase):
             response_follow,
             f'/auth/login/?next=/profile/{self.following}/follow/')
 
-    def test_new_post(self):
+    def test_new_post_appears_in_the_user_feed(self):
         """Новая запись пользователя появляется в ленте тех,
-        кто на него подписан, и не появляется в ленте тех,
-        кто не подписан на него"""
+        кто на него подписан"""
         Follow.objects.create(user=self.user_one, author=self.following)
         response_one = self.authorized_client.get(
             reverse('posts:follow_index'),
             follow=True,
         )
         self.assertIn(self.post, response_one.context['page_obj'])
+
+    def test_new_post_not_appears_in_the_user_feed(self):
+        """Новая запись пользователя не появляется в ленте тех,
+        кто не подписан на него"""
         self.authorized_client.logout()
         response_two = self.another_authorized_client.get(
             reverse('posts:follow_index'),

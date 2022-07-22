@@ -46,9 +46,16 @@ def profile(request, username):
     paginator = Paginator(post_list, LIM_POST)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    if request.user.is_authenticated:
+        following = Follow.objects.filter(
+            user=request.user, author=author
+        ).exists()
+    else:
+        following = False
     context = {'post_list': post_list,
                'page_obj': page_obj,
                'author': author,
+               'following': following,
                }
     return render(request, 'posts/profile.html', context)
 
