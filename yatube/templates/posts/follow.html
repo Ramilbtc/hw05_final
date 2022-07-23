@@ -4,7 +4,6 @@
 {% block content %}
   {% include 'posts/includes/switcher.html' %}
   {% for post in page_obj %}  
-    {% if post.group %}
     <div class="container py-5">    
     <article>
       <ul>
@@ -35,7 +34,6 @@
       {% endthumbnail %}
     </article>
   </div>
-    {% endif %}
     {% if not forloop.last %}<hr>{% endif %}
   {% endfor %}
   {% include 'posts/includes/paginator.html' %}
